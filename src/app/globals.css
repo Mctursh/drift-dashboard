@@ -141,3 +141,7 @@
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
+
+#select-wallet-modal {
+  background-color: #111827;
+}

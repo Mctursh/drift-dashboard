@@ -21,7 +21,7 @@ const SelectWallet: FC<SelectWalletProp> = ({
   handleWalletSelect,
 }) => {
   return (
-    <DialogContent className="px-0 max-w-[567px] w-[calc(100%-2rem)] lg:w-[50%] bg-white border border-neutral-3 shadow-sm rounded-lg">
+    <DialogContent id="select-wallet-modal" className="px-0 max-w-[567px] w-[calc(100%-2rem)] lg:w-[50%] bg-[#111827] border border-neutral-3 shadow-sm rounded-lg">
       <DialogHeader className="px-6">
         <DialogTitle className="text-neutral-12 font-bold">
           Connect wallet
@@ -33,17 +33,17 @@ const SelectWallet: FC<SelectWalletProp> = ({
 
       <HorizontalRule />
 
-      <div className="flex w-full px-6">
+      <div className="flex w-full py-">
         <div className="flex flex-col gap-y-6 justify-start w-full max-h-[300px] overflow-y-auto ">
           {wallets.map((wallet) => (
             <Button
               key={wallet.adapter.name}
               onClick={() => handleWalletSelect(wallet.adapter.name)}
               variant={"ghost"}
-              className="hover:bg-transparent hover:text-white p-0 text-[20px] text-white flex w-full justify-center items-center "
+              className="hover:bg-transparent hover:text-white p-6 text-[20px] text-white flex w-full justify-center items-center "
             >
               <div className="w-full flex justify-between items-center">
-                <div className="flex items-center">
+                <div className="flex items-center gap-x-2">
                   <div className="flex">
                     <Image
                       src={wallet.adapter.icon}

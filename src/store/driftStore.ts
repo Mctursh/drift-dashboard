@@ -11,7 +11,7 @@ interface DriftActions {
 //   setUserStatsAccount: (userStatsAccount: string | null) => void;
   
   // Set markets
-//   setMarkets: (markets: typeof PerpMarkets[] | null) => void;
+  setMarkets: (markets: typeof PerpMarkets | null) => void;
   setSelectedMarket: (market: string | null) => void;
   
   // Modal controls
@@ -91,7 +91,7 @@ const useDriftStore = create<DriftStore>((set) => ({
 //   setUserStatsAccount: (userStatsAccount: string | null) => set({ userStatsAccount }),
   
   // Set markets
-//   setMarkets: (markets: typeof PerpMarkets[] | null) => set({ markets }),
+  setMarkets: (markets: typeof PerpMarkets | null) => set({ markets }),
   setSelectedMarket: (market: string | null) => set({ selectedMarket: market }),
   
   // Modal controls

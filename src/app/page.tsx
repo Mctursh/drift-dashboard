@@ -25,7 +25,7 @@ export default function Home() {
       
       <Dashboard />
       
-      <motion.footer
+      {/* <motion.footer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 0.5 }}
@@ -36,7 +36,7 @@ export default function Home() {
             <p>Drift Subaccount Dashboard • Built with Next.js, Tailwind CSS, and Drift SDK</p>
           </div>
         </div>
-      </motion.footer>
+      </motion.footer> */}
     </main>
   );
 }

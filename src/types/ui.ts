@@ -5,7 +5,7 @@ import { WalletAdapterNetwork } from '@hermis/solana-headless-react';
 // Component props
 export interface SolanaProviderProps {
   children: ReactNode;
-  network: WalletAdapterNetwork;
+  // network: WalletAdapterNetwork;
 }
 
 export interface SubaccountListProps {

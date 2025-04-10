@@ -34,7 +34,7 @@ export default function PositionsView({ positions, loading }: { positions: any, 
           <p className="text-sm">Open a position to get started</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
           {positions.map((position: any, index: number) => (
             <motion.div
               key={position.marketIndex}

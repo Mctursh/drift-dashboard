@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useEffect } from 'react';
-// import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
@@ -11,13 +10,11 @@ import {
   TorusWalletAdapter
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
-// import '@solana/wallet-adapter-react-ui/styles.css';
-// import { useHermitWalletAdapter } from '@hermis/solana-headless-adapter-react';
 import useWalletStore from '@/store/walletStore';
 import { SolanaProviderProps } from '@/types/ui';
 import { HermisProvider } from '@hermis/solana-headless-react';
 
-export function SolanaProvider({ children, network }: SolanaProviderProps) {
+export function SolanaProvider({ children }: SolanaProviderProps) {
   // Initialize wallet store
   const {
     setWallet,
@@ -26,9 +23,9 @@ export function SolanaProvider({ children, network }: SolanaProviderProps) {
     setConnecting,
     setDisconnecting
   } = useWalletStore();
-
+  const network = "https://mainnet.helius-rpc.com/?api-key=6b972023-3a7c-4ded-ae5a-a0ccc390ea4c";
   // You can also customize the wallet adapter options
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => network, []);
 
   // Initialize wallet adapters
   const wallets = useMemo(

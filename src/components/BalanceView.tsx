@@ -1,11 +1,13 @@
 // app/components/BalanceView.js
 'use client';
 
+import { formatLargeNumber } from '@/utils';
 import { motion } from 'framer-motion';
 import { FiDollarSign, FiRefreshCw } from 'react-icons/fi';
 
 export default function BalanceView({ balances, loading }: { balances: any, loading: boolean }) {
   const balancesList = Object.values(balances || {});
+  console.log('balancesList', balancesList);
   
   return (
     <motion.div
@@ -53,12 +55,13 @@ export default function BalanceView({ balances, loading }: { balances: any, load
                 <div className="flex-1">
                   <h3 className="font-medium">Token #{balance.token}</h3>
                   <div className="text-sm text-gray-400">
-                    Balance: {parseFloat(balance.balance).toFixed(4)}
+                    Balance: {formatLargeNumber(balance.balance)}
+                    {/* Balance: {formatLargeNumber(balance.balance).toFixed(4)} */}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold">
-                    ${parseFloat(balance.value).toFixed(2)}
+                    ${formatLargeNumber(balance.value)}
                   </div>
                 </div>
               </div>

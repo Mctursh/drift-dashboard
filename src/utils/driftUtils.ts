@@ -25,64 +25,63 @@ import {
   WithdrawFundPayload
 } from '@/types/drift';
 import { TransactionInstruction } from '@solana/web3.js';
+import { AnchorWallet, useAnchorWallet } from '@hermis/solana-headless-react';
 
-const heliusRPC = ""
+
+const heliusRPC = "https://mainnet.helius-rpc.com/?api-key=6b972023-3a7c-4ded-ae5a-a0ccc390ea4c"
 const MAX_SUBACCOUNTS = 8;
 
 // Initialize Drift client
 export const initializeDriftClient = async (publicKey: PublicKey): Promise<DriftClientConfig> => {
   try {
-    // Create a connection to Solana
+    // Create connection to preferred RPC endpoint
     const connection = new Connection(heliusRPC, 'confirmed');
-
-    // Create a wallet instance
+    
+    // Initialize the SDK with the mainnet environment
+    const sdkConfig = initialize({ env: 'mainnet-beta' });
+    
+    // Create wallet instance using the connected user's public key
     const wallet = {
-      publicKey,
+      publicKey: publicKey,
       signTransaction: async (tx: any) => tx,
       signAllTransactions: async (txs: any) => txs,
     };
 
-    // Create a bulk account loader
+    // Create bulk account loader for efficient data fetching
     const accountLoader = new BulkAccountLoader(
       connection,
       'confirmed',
-      10_000
+      10_000 // Reasonable timeout
     );
 
-    // Initialize the Drift client
-    const driftPublicKey = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH";
-    // const driftPublicKey = MAINNET_CONFIG.DRIFT_PROGRAM_ID;
-
+    // Initialize Drift client with the connected wallet
     const driftClient = new DriftClient({
-      // const driftClient = initialize({
-      env: 'mainnet-beta',
       connection,
-      wallet: wallet,
-      programID: new PublicKey(driftPublicKey),
-      activeSubAccountId: 0,
-      subAccountIds: [0, 1, 2, 3, 4, 5, 6, 7],
-      authority: publicKey,
+      wallet,
+      programID: new PublicKey(sdkConfig.DRIFT_PROGRAM_ID),
       accountSubscription: {
-        type: 'polling',
-        accountLoader,
+        type: 'websocket',
+        // accountLoader: accountLoader,
       },
     });
 
-    // Initialize the UserMap to track users
+    // Initialize UserMap to track all subaccounts (up to 8)
     const userMap = new UserMap({
       driftClient,
       connection,
+      // authority: publicKey,
       subscriptionConfig: {
-        type: 'polling',
-        frequency: 5000,
+        type: 'websocket',
+        // frequency: 5000,
         commitment: 'confirmed',
       },
-      //   activeSubAccountId: 0,
-      //   subAccountIds: [0, 1, 2, 3, 4, 5, 6, 7],
-      //   authority: publicKey,
     });
 
+    // Subscribe to users/subaccounts
     await userMap.subscribe();
+    
+    console.log('Drift client initialized successfully');
+    console.log('UserMap subscribed successfully');
 
     return {
       driftClient,
@@ -107,24 +106,47 @@ export const getUserStatsAccount = async (driftClient: DriftClient, publicKey: P
   }
 };
 
-// Get subaccounts for a wallet
 export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> => {
   try {
     const subaccounts: Subaccount[] = [];
-    const users = userMap.values()
-    for (let i = 0; i < MAX_SUBACCOUNTS; i++) {
-      const user = users.next().value
-      // const user = await userMap.mustGetUserAccount(i);
-      if (user) {
-        subaccounts.push({
-          id: i,
-          name: `Subaccount ${i}`,
-          authority: user.authority.toString(),
-          subAccountId: user.subAccountId,
-          delegate: user.delegate.toString(),
-        });
+    
+    // Get iterator of User objects from UserMap
+    const users = userMap.values();
+    const userCount = [...userMap.values()].length;
+    console.log(`Found ${userCount} User objects in UserMap`);
+    
+    // Reset the iterator
+    const usersIterator = userMap.values();
+    let index = 0;
+    
+    // Iterate through User objects
+    for (const userInstance of usersIterator) {
+      if (userInstance) {
+        try {
+          // Get the user account data by calling getUserAccount()
+          const userAccount = userInstance.getUserAccount();
+          
+          if (userAccount) {
+            subaccounts.push({
+              id: index,
+              name: `Subaccount ${userAccount.subAccountId || index}`,
+              authority: userAccount.authority.toString(),
+              subAccountId: userAccount.subAccountId,
+              delegate: userAccount.delegate.toString(),
+            });
+          }
+        } catch (err) {
+          console.warn(`Error processing User object at index ${index}:`, err);
+        }
       }
+      
+      index++;
+      if (index >= MAX_SUBACCOUNTS) break;
     }
+
+    console.log('subaccounts', subaccounts);
+    
+    
     return subaccounts;
   } catch (error) {
     console.error('Error getting subaccounts:', error);
@@ -132,19 +154,48 @@ export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> =>
   }
 };
 
-export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): User | undefined => {
-  for (const user of userMap.values()) {
-    if (user.getUserAccount().subAccountId === subaccountId) {
-      return user;
+export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): User | null => {
+  try {
+    if (!userMap) {
+      console.warn("UserMap is undefined or null");
+      return null;
     }
+    
+    const users = [...userMap.values()];
+    console.log(`Searching through ${users.length} users for subaccount ID ${subaccountId}`);
+    
+    for (const user of users) {
+      try {
+        const account = user.getUserAccount();
+        if (account && account.subAccountId === subaccountId) {
+          return user;
+        }
+      } catch (err) {
+        console.warn("Error accessing user account:", err);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error in getUserBySubaccountId:", error);
+    return null;
   }
-  return undefined;
-}
+};
 
-export const getUserAccountBySubaccountId = (userMap: UserMap, subaccountId: number): UserAccount | undefined => {
+export const getUserAccountBySubaccountId = (userMap: UserMap, subaccountId: number): any => {
   const user = getUserBySubaccountId(userMap, subaccountId);
-  return user ? user.getUserAccount() : undefined;
-}
+  if (!user) {
+    console.warn(`No user found for subaccount ID: ${subaccountId}`);
+    return null;
+  }
+  
+  try {
+    return user.getUserAccount();
+  } catch (err) {
+    console.error("Error getting user account:", err);
+    return null;
+  }
+};
 
 // Get balances for a subaccount
 export const getBalances = async (userMap: UserMap, subaccountId: number): Promise<SubaccountBalances> => {
@@ -174,33 +225,88 @@ export const getBalances = async (userMap: UserMap, subaccountId: number): Promi
   }
 };
 
-// Get perp positions for a subaccount
 export const getPerpPositions = async (userMap: UserMap, subaccountId: number): Promise<PerpPosition[]> => {
   try {
-    const user = getUserAccountBySubaccountId(userMap, subaccountId);
-    if (!user) {
-      throw new Error('Subaccount not found');
+    // First, log to verify the params we're receiving
+    console.log(`Getting positions for subaccount ID: ${subaccountId}`);
+    
+    // Get the user instance first
+    let userInstance = null;
+    try {
+      for (const user of userMap.values()) {
+        const account = user.getUserAccount();
+        if (account && account.subAccountId === subaccountId) {
+          userInstance = user;
+          break;
+        }
+      }
+    } catch (err: any) {
+      console.error("Error finding user in userMap:", err);
+      throw new Error(`Failed to find user: ${err.message}`);
     }
 
+    if (!userInstance) {
+      console.warn(`No user found for subaccount ID: ${subaccountId}`);
+      return []; // Return empty array instead of throwing
+    }
+    
+    // Get the user account data
+    let userAccount = null;
+    try {
+      userAccount = userInstance.getUserAccount();
+      console.log("Found user account:", userAccount.subAccountId);
+    } catch (err: any) {
+      console.error("Error getting user account:", err);
+      throw new Error(`Failed to get user account: ${err.message}`);
+    }
+    
+    // Verify perpPositions exists and is iterable
+    if (!userAccount.perpPositions || !Array.isArray(userAccount.perpPositions)) {
+      console.warn("User account has no perpPositions array:", userAccount);
+      return []; // Return empty array
+    }
+    
+    console.log(`Found ${userAccount.perpPositions.length} perp positions`);
+    
+    // Process positions safely
     const positions: PerpPosition[] = [];
-    for (const position of user.perpPositions) {
-      if (position.baseAssetAmount.gt(0) || position.quoteAssetAmount.gt(0)) {
+    
+    for (const position of userAccount.perpPositions) {
+      try {
+        // Skip if position is not valid
+        if (!position || !position.marketIndex) continue;
+        
+        // Skip empty positions
+        const hasBaseAmount = position.baseAssetAmount && 
+                             typeof position.baseAssetAmount.gt === 'function' && 
+                             position.baseAssetAmount.gt(0);
+                             
+        const hasQuoteAmount = position.quoteAssetAmount && 
+                              typeof position.quoteAssetAmount.gt === 'function' && 
+                              position.quoteAssetAmount.gt(0);
+        
+        if (!hasBaseAmount && !hasQuoteAmount) continue;
+        
+        // Add the position with safe conversions
         positions.push({
           marketIndex: position.marketIndex.toString(),
-          baseAssetAmount: position.baseAssetAmount.toString(),
-          quoteAssetAmount: position.quoteAssetAmount.toString(),
-          entryPrice: position.quoteEntryAmount,
-          // entryPrice: position.entryPrice?.toString() || '0',
-          breakEvenPrice: position.quoteBreakEvenAmount,
-          // breakEvenPrice: position.breakEvenPrice?.toString() || '0',
-          pnl: position.settledPnl,
-          // pnl: position.pnl?.toString() || '0',
-          unrealizedPnl: position.remainderBaseAssetAmount.toString(),
-          // unrealizedPnl: position.unrealizedPnl?.toString() || '0',
-          direction: position.baseAssetAmount.gt(0) ? 'LONG' : 'SHORT',
+          baseAssetAmount: position.baseAssetAmount ? position.baseAssetAmount.toString() : '0',
+          quoteAssetAmount: position.quoteAssetAmount ? position.quoteAssetAmount.toString() : '0',
+          entryPrice: position.quoteEntryAmount || '0',
+          breakEvenPrice: position.quoteBreakEvenAmount || '0',
+          pnl: position.settledPnl || '0',
+          unrealizedPnl: position.remainderBaseAssetAmount ? 
+                        position.remainderBaseAssetAmount.toString() : '0',
+          direction: (hasBaseAmount && position.baseAssetAmount.gt(0)) ? 'LONG' : 'SHORT',
         });
+      } catch (posErr) {
+        console.warn(`Error processing position at market index ${position?.marketIndex}:`, posErr);
+        // Continue to next position instead of failing
       }
     }
+
+    console.log('positions', positions);
+    
 
     return positions;
   } catch (error) {
@@ -470,7 +576,7 @@ export const depositFunds = async ({
 };
 
 // Withdraw funds from a subaccount
-export const withdrawFunds = async({
+export const withdrawFunds = async ({
   driftClient,
   userMap,
   subaccountId,

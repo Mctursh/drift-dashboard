@@ -52,11 +52,13 @@ export default function Dashboard() {
   // Fetch subaccounts on wallet connection or lookup
   useEffect(() => {
     const fetchSubaccounts = async () => {
+      console.log('userMap', userMap);
       if (!userMap) return;
       
       try {
         setLoading(true);
         const accounts = await getSubaccounts(userMap);
+        console.log('accounts', accounts);
         setSubaccounts(accounts);
         if (accounts.length > 0) {
           setSelectedSubaccountIndex(0);

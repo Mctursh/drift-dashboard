@@ -17,3 +17,23 @@ export const verifySignedMessage = (
       const message = `Sign this message to verify ownership. Nonce: ${nonce}`;
       return message
   }
+
+  export function ellipsify(str = "", len = 4) {
+    if (str.length > 30) {
+      return (
+        str.substring(0, len) + ".." + str.substring(str.length - len, str.length)
+      );
+    }
+    return str;
+  }
+
+  export function formatLargeNumber(num: string | number): string {
+    const str = num.toString();
+    if (str.length <= 4) return str;
+    
+    // Remove decimal points and format
+    const [whole, decimal] = str.split('.');
+    const formattedWhole = whole.slice(0, 4) + '...';
+    
+    return decimal ? `${formattedWhole}.${decimal}` : formattedWhole;
+  }

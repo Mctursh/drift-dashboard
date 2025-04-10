@@ -1,10 +1,11 @@
-import { DriftClient, UserMap, PerpMarkets, BulkAccountLoader, TxParams } from '@drift-labs/sdk';
+import { DriftClient, UserMap, PerpMarkets, BulkAccountLoader, TxParams, User } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 // Main Drift client interfaces
 export interface DriftClientConfig {
   driftClient: DriftClient | null;
-  userMap: UserMap | null;
+  userMap?: UserMap | null;
+  user?: User | null;
   accountLoader: BulkAccountLoader | null;
   markets: typeof PerpMarkets | null;
   //   userStatsAccount: string | null;

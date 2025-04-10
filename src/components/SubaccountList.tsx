@@ -27,7 +27,7 @@ export default function SubaccountList({
       className="card h-full"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Subaccounts</h2>
+        <h2 className="text-xl font-bold mr-2">Subaccounts</h2>
         
         {loading ? (
           <div className="animate-spin">
@@ -40,7 +40,7 @@ export default function SubaccountList({
         )}
       </div>
       
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2 mb-4 min-h-[50px] max-h-[350px] overflow-y-auto pr-2">
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin">
