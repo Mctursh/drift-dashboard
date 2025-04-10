@@ -63,6 +63,7 @@ export interface ModalStates {
   isPerpOrderModalOpen: boolean;
   isTpSlModalOpen: boolean;
   isScaledOrdersModalOpen: boolean;
+  isWalletLookupModalOpen: boolean;
 }
 
 // Order form states

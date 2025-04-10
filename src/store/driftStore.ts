@@ -45,6 +45,9 @@ interface DriftActions {
   // Reset states
   resetOrderState: () => void;
   resetDriftState: () => void;
+
+  openWalletLookupModal: () => void;
+  closeWalletLookupModal: () => void;
 }
 
 type DriftStore = DriftState & DriftActions;
@@ -63,6 +66,7 @@ const initialState: DriftState = {
   isPerpOrderModalOpen: false,
   isTpSlModalOpen: false,
   isScaledOrdersModalOpen: false,
+  isWalletLookupModalOpen: false,
   
   // Order form state
   selectedMarket: null,
@@ -105,6 +109,8 @@ const useDriftStore = create<DriftStore>((set) => ({
   closeTpSlModal: () => set({ isTpSlModalOpen: false }),
   openScaledOrdersModal: () => set({ isScaledOrdersModalOpen: true }),
   closeScaledOrdersModal: () => set({ isScaledOrdersModalOpen: false }),
+  openWalletLookupModal: () => set({ isWalletLookupModalOpen: true }),
+  closeWalletLookupModal: () => set({ isWalletLookupModalOpen: false }),
   
   // Order form actions
   setOrderType: (type: 'MARKET' | 'LIMIT') => set({ orderType: type }),

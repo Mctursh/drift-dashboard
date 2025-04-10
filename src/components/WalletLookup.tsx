@@ -1,4 +1,3 @@
-// app/components/WalletLookup.js
 'use client';
 
 import { useState } from 'react';
@@ -6,11 +5,13 @@ import { PublicKey } from '@solana/web3.js';
 import { motion } from 'framer-motion';
 import { FiSearch } from 'react-icons/fi';
 import useWalletStore from '../store/walletStore';
+import useDriftStore from '../store/driftStore';
 
 export default function WalletLookup() {
   const [inputValue, setInputValue] = useState('');
   const [isValidAddress, setIsValidAddress] = useState(true);
   const { setLookupWalletAddress } = useWalletStore();
+  const { openWalletLookupModal } = useDriftStore();
 
   const validateAndSetAddress = (address: string) => {
     if (!address.trim()) {
@@ -22,7 +23,13 @@ export default function WalletLookup() {
       // Validate Solana address
       new PublicKey(address);
       setIsValidAddress(true);
+      
+      // Set the lookup wallet address and open the modal
       setLookupWalletAddress(address);
+      openWalletLookupModal();
+      
+      // Clear the input field
+      setInputValue('');
     } catch (error) {
       setIsValidAddress(false);
     }

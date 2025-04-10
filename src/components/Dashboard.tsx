@@ -22,10 +22,11 @@ import PerpOrderForm from './PerpOrderForm';
 import TakeProfitStopLossForm from './TakeProfitStopLossForm';
 import ScaledOrdersForm from './ScaledOrdersForm';
 import { FiActivity, FiDollarSign, FiGrid, FiLayers } from 'react-icons/fi';
+import LookupWalletModal from './modals/LookupWalletModal';
 
 export default function Dashboard() {
   const { publicKey, connected, lookupWalletAddress } = useWalletStore();
-  const { driftClient, userMap, isDepositModalOpen, isWithdrawModalOpen, isPerpOrderModalOpen, isTpSlModalOpen, isScaledOrdersModalOpen } = useDriftStore();
+  const { driftClient, isWalletLookupModalOpen, userMap, isDepositModalOpen, isWithdrawModalOpen, isPerpOrderModalOpen, isTpSlModalOpen, isScaledOrdersModalOpen } = useDriftStore();
   const { 
     subaccounts, 
     selectedSubaccountIndex, 
@@ -264,6 +265,7 @@ export default function Dashboard() {
       {isPerpOrderModalOpen && <PerpOrderForm isModal />}
       {isTpSlModalOpen && <TakeProfitStopLossForm />}
       {isScaledOrdersModalOpen && <ScaledOrdersForm />}
+      {isWalletLookupModalOpen && <LookupWalletModal />}
     </>
   );
 }
