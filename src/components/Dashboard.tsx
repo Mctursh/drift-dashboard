@@ -25,8 +25,8 @@ import { FiActivity, FiDollarSign, FiGrid, FiLayers } from 'react-icons/fi';
 import LookupWalletModal from './modals/LookupWalletModal';
 
 export default function Dashboard() {
-  const { publicKey, connected, lookupWalletAddress } = useWalletStore();
-  const { driftClient, isWalletLookupModalOpen, userMap, isDepositModalOpen, isWithdrawModalOpen, isPerpOrderModalOpen, isTpSlModalOpen, isScaledOrdersModalOpen } = useDriftStore();
+  const { connected, lookupWalletAddress } = useWalletStore();
+  const { isWalletLookupModalOpen, userMap, isDepositModalOpen, isWithdrawModalOpen, isPerpOrderModalOpen, isTpSlModalOpen, isScaledOrdersModalOpen } = useDriftStore();
   const { 
     subaccounts, 
     selectedSubaccountIndex, 
@@ -142,59 +142,6 @@ export default function Dashboard() {
     setPositionsLoading,
     setOrdersLoading,
   ]);
-  // useEffect(() => {
-  //   const fetchSubaccountData = async () => {
-  //     if (!userMap || subaccounts.length === 0) return;
-      
-  //     const subaccountId = subaccounts[selectedSubaccountIndex]?.id;
-  //     if (subaccountId === undefined) return;
-      
-  //     // Fetch balances
-  //     try {
-  //       setBalancesLoading(true);
-  //       const accountBalances = await getBalances(userMap, subaccountId);
-  //       setBalances(accountBalances);
-  //     } catch (error) {
-  //       console.error('Error fetching balances:', error);
-  //     } finally {
-  //       setBalancesLoading(false);
-  //     }
-      
-  //     // Fetch positions
-  //     try {
-  //       setPositionsLoading(true);
-  //       const perpPositions = await getPerpPositions(userMap, subaccountId);
-  //       setPositions(perpPositions);
-  //     } catch (error) {
-  //       console.error('Error fetching positions:', error);
-  //     } finally {
-  //       setPositionsLoading(false);
-  //     }
-      
-  //     // Fetch orders
-  //     try {
-  //       setOrdersLoading(true);
-  //       const openOrders = await getOpenOrders(userMap, subaccountId);
-  //       setOrders(openOrders);
-  //     } catch (error) {
-  //       console.error('Error fetching orders:', error);
-  //     } finally {
-  //       setOrdersLoading(false);
-  //     }
-  //   };
-    
-  //   fetchSubaccountData();
-  // }, [
-  //   userMap, 
-  //   subaccounts, 
-  //   selectedSubaccountIndex, 
-  //   setBalances, 
-  //   setPositions, 
-  //   setOrders,
-  //   setBalancesLoading,
-  //   setPositionsLoading,
-  //   setOrdersLoading,
-  // ]);
   
   // Render dashboard when wallet is connected or a lookup address is provided
   const shouldRenderDashboard = connected || lookupWalletAddress;

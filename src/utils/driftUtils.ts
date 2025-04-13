@@ -689,12 +689,10 @@ export const depositFunds = async ({
 
     // Make the deposit call with appropriate parameters
     const txSig = await driftClient.deposit(
-      amount, // amount as BN
+      amount,
       marketIndex,
       associatedTokenAccount,
       subAccountId || subaccountId,
-      // undefined,
-      // txParams,
       reduceOnly,
       {
         ...txParams,
@@ -752,7 +750,7 @@ export const withdrawFunds = async ({
   subaccountId,
   marketIndex,
   amount,
-  associatedTokenAddress,
+  // associatedTokenAddress,
   reduceOnly = false,
   subAccountId,
   txParams,
@@ -765,15 +763,28 @@ export const withdrawFunds = async ({
       throw new Error('Subaccount not found');
     }
 
+    // Validate market index (only SOL or USDC)
+    if (marketIndex !== 0 && marketIndex !== 1) {
+      throw new Error('Only USDC (0) and SOL (1) withrawals are supported');
+    }
+
+    // Ensure we have a valid amount as BN
+    if (!amount || !(amount instanceof BN)) {
+      throw new Error('Invalid amount for withdrawal');
+    }
     // userMap.setActiveUser(subaccountId);
+    const associatedTokenAccount = await driftClient.getAssociatedTokenAccount(marketIndex);
 
     const txSig = await driftClient.withdraw(
       amount,
       marketIndex,
-      associatedTokenAddress,
+      associatedTokenAccount,
       reduceOnly,
       subAccountId,
-      txParams,
+      {
+        ...txParams,
+        computeUnitsPrice: 10_000,
+      },
       updateFuel
     );
 

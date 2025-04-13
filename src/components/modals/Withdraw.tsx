@@ -7,6 +7,7 @@ import { FiCheck, FiX } from 'react-icons/fi';
 import { withdrawFunds } from '@/utils/driftUtils';
 import useDriftStore from '@/store/driftStore';
 import useSubaccountStore from '@/store/subaccountStore';
+import { BN, QUOTE_PRECISION } from '@drift-labs/sdk';
 
 export default function WithdrawModal() {
   const { driftClient, userMap, closeWithdrawModal } = useDriftStore();
@@ -37,18 +38,23 @@ export default function WithdrawModal() {
       return;
     }
     
+    const marketIndexNum = parseInt(marketIndex);
+    const amountBN = new BN(amount).mul(QUOTE_PRECISION);
+    
     try {
       setIsSubmitting(true);
       setError('');
       setSuccess('');
-      
-      const txSig = await withdrawFunds(
+
+      const payload = {
         driftClient,
         userMap,
         subaccountId,
-        parseInt(marketIndex),
-        parseFloat(amount)
-      );
+        marketIndex: marketIndexNum,
+        amount: amountBN,
+      }
+      
+      const txSig = await withdrawFunds(payload);
       
       setSuccess(`Withdrawal successful! Transaction: ${txSig.slice(0, 8)}...`);
       setTimeout(() => {
