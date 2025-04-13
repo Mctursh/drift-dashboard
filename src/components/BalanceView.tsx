@@ -53,7 +53,7 @@ export default function BalanceView({ balances, loading }: { balances: any, load
                   <FiDollarSign size={20} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium">Token #{balance.token}</h3>
+                  <h3 className="font-medium">{balance.token}</h3>
                   <div className="text-sm text-gray-400">
                     Balance: {formatLargeNumber(balance.balance)}
                     {/* Balance: {formatLargeNumber(balance.balance).toFixed(4)} */}

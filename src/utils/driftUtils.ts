@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from '@hermis/solana-headless-core';
+import { Adapter, Connection, Keypair, PublicKey, signAllTransactions, signTransaction, Transaction } from '@hermis/solana-headless-core';
 import {
   DriftClient,
   initialize,
@@ -13,6 +13,12 @@ import {
   UserAccount,
   OrderParams,
   TxParams,
+  BN,
+  PerpMarketAccount,
+  PerpMarketConfig,
+  OrderStatus,
+  Wallet,
+  QUOTE_PRECISION,
 } from '@drift-labs/sdk';
 import {
   DriftClientConfig,
@@ -25,62 +31,50 @@ import {
   WithdrawFundPayload
 } from '@/types/drift';
 import { TransactionInstruction } from '@solana/web3.js';
-import { AnchorWallet, useAnchorWallet } from '@hermis/solana-headless-react';
-
+import { AnchorWallet, useAnchorWallet, } from '@hermis/solana-headless-react';
+import bs58 from 'bs58';
 
 const heliusRPC = "https://mainnet.helius-rpc.com/?api-key=6b972023-3a7c-4ded-ae5a-a0ccc390ea4c"
 const MAX_SUBACCOUNTS = 8;
 
 // Initialize Drift client
-export const initializeDriftClient = async (publicKey: PublicKey): Promise<DriftClientConfig> => {
+export const initializeDriftClient = async (
+  connection: Connection,
+  wallet: AnchorWallet
+  // publicKey: PublicKey,
+): Promise<DriftClientConfig> => {
   try {
-    // Create connection to preferred RPC endpoint
-    const connection = new Connection(heliusRPC, 'confirmed');
-    
-    // Initialize the SDK with the mainnet environment
-    const sdkConfig = initialize({ env: 'mainnet-beta' });
-    
-    // Create wallet instance using the connected user's public key
-    const wallet = {
-      publicKey: publicKey,
-      signTransaction: async (tx: any) => tx,
-      signAllTransactions: async (txs: any) => txs,
-    };
 
-    // Create bulk account loader for efficient data fetching
+    const sdkConfig = initialize({ env: 'mainnet-beta' });
+
     const accountLoader = new BulkAccountLoader(
       connection,
       'confirmed',
       10_000 // Reasonable timeout
     );
 
-    // Initialize Drift client with the connected wallet
     const driftClient = new DriftClient({
       connection,
       wallet,
       programID: new PublicKey(sdkConfig.DRIFT_PROGRAM_ID),
       accountSubscription: {
         type: 'websocket',
-        // accountLoader: accountLoader,
       },
     });
 
-    // Initialize UserMap to track all subaccounts (up to 8)
     const userMap = new UserMap({
       driftClient,
       connection,
-      // authority: publicKey,
+      includeIdle: true,
       subscriptionConfig: {
         type: 'websocket',
-        // frequency: 5000,
         commitment: 'confirmed',
       },
     });
 
-    // Subscribe to users/subaccounts
     await userMap.subscribe();
-    
-    console.log('Drift client initialized successfully');
+
+    console.log('Drift client initialized successfully with wallet:', wallet.publicKey.toBase58());
     console.log('UserMap subscribed successfully');
 
     return {
@@ -97,8 +91,11 @@ export const initializeDriftClient = async (publicKey: PublicKey): Promise<Drift
 
 // Get user stats account
 export const getUserStatsAccount = async (driftClient: DriftClient, publicKey: PublicKey): Promise<string> => {
+  
   try {
-    return driftClient.userStatsAccountPublicKey.toBase58()
+    const statAccount = driftClient.userStatsAccountPublicKey.toBase58()
+    console.log('User stats account:', statAccount);
+    return statAccount;
     // return driftClient.getUserStatsAccountPublicKey(publicKey).toString();
   } catch (error) {
     console.error('Error getting user stats account:', error);
@@ -111,12 +108,8 @@ export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> =>
     const subaccounts: Subaccount[] = [];
     
     // Get iterator of User objects from UserMap
-    const users = userMap.values();
-    const userCount = [...userMap.values()].length;
-    console.log(`Found ${userCount} User objects in UserMap`);
-    
-    // Reset the iterator
     const usersIterator = userMap.values();
+    
     let index = 0;
     
     // Iterate through User objects
@@ -126,7 +119,13 @@ export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> =>
           // Get the user account data by calling getUserAccount()
           const userAccount = userInstance.getUserAccount();
           
-          if (userAccount) {
+          // Check if this is a valid, initialized account
+          // A valid account should have non-zero values for key fields
+          if (userAccount && 
+              userAccount.authority && 
+              !userAccount.authority.equals(PublicKey.default) &&
+              userAccount.name) {  // Check if name exists and is non-empty
+            
             subaccounts.push({
               id: index,
               name: `Subaccount ${userAccount.subAccountId || index}`,
@@ -137,15 +136,15 @@ export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> =>
           }
         } catch (err) {
           console.warn(`Error processing User object at index ${index}:`, err);
+          // If we get an error trying to access account data, it's likely not initialized
         }
       }
       
       index++;
       if (index >= MAX_SUBACCOUNTS) break;
     }
-
-    console.log('subaccounts', subaccounts);
     
+    console.log('Valid subaccounts:', subaccounts);
     
     return subaccounts;
   } catch (error) {
@@ -154,6 +153,56 @@ export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> =>
   }
 };
 
+// export const getSubaccounts = async (userMap: UserMap): Promise<Subaccount[]> => {
+//   try {
+//     const subaccounts: Subaccount[] = [];
+
+//     // Get iterator of User objects from UserMap
+//     const users = userMap.values();
+//     const userCount = [...userMap.values()].length;
+//     // console.log(`Found ${userCount} User objects in UserMap`);
+
+//     // Reset the iterator
+//     const usersIterator = userMap.values();
+//     let index = 0;
+
+//     // Iterate through User objects
+//     for (const userInstance of usersIterator) {
+//       if (userInstance) {
+//         try {
+//           // Get the user account data by calling getUserAccount()
+//           const userAccount = userInstance.getUserAccount();
+//           console.log('userAccount', userAccount);
+
+
+//           if (userAccount) {
+//             subaccounts.push({
+//               id: index,
+//               name: `Subaccount ${userAccount.subAccountId || index}`,
+//               authority: userAccount.authority.toString(),
+//               subAccountId: userAccount.subAccountId,
+//               delegate: userAccount.delegate.toString(),
+//             });
+//           }
+//         } catch (err) {
+//           console.warn(`Error processing User object at index ${index}:`, err);
+//         }
+//       }
+
+//       index++;
+//       if (index >= MAX_SUBACCOUNTS) break;
+//     }
+
+//     console.log('subaccounts', subaccounts);
+
+
+//     return subaccounts;
+//   } catch (error) {
+//     console.error('Error getting subaccounts:', error);
+//     throw error;
+//   }
+// };
+
 export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): User | null => {
   try {
     if (!userMap) {
@@ -161,13 +210,16 @@ export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): U
       return null;
     }
     
+    // Convert to array for stable iteration
     const users = [...userMap.values()];
-    console.log(`Searching through ${users.length} users for subaccount ID ${subaccountId}`);
     
     for (const user of users) {
       try {
         const account = user.getUserAccount();
-        if (account && account.subAccountId === subaccountId) {
+        if (account && 
+            account.subAccountId === subaccountId && 
+            account.authority && 
+            !account.authority.equals(PublicKey.default)) {
           return user;
         }
       } catch (err) {
@@ -175,6 +227,7 @@ export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): U
       }
     }
     
+    console.warn(`No valid user found for subaccount ID: ${subaccountId}`);
     return null;
   } catch (error) {
     console.error("Error in getUserBySubaccountId:", error);
@@ -182,13 +235,41 @@ export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): U
   }
 };
 
-export const getUserAccountBySubaccountId = (userMap: UserMap, subaccountId: number): any => {
+// export const getUserBySubaccountId = (userMap: UserMap, subaccountId: number): User | null => {
+//   try {
+//     if (!userMap) {
+//       console.warn("UserMap is undefined or null");
+//       return null;
+//     }
+
+//     const users = [...userMap.values()];
+//     console.log(`Searching through ${users.length} users for subaccount ID ${subaccountId}`);
+
+//     for (const user of users) {
+//       try {
+//         const account = user.getUserAccount();
+//         if (account && account.subAccountId === subaccountId) {
+//           return user;
+//         }
+//       } catch (err) {
+//         console.warn("Error accessing user account:", err);
+//       }
+//     }
+
+//     return null;
+//   } catch (error) {
+//     console.error("Error in getUserBySubaccountId:", error);
+//     return null;
+//   }
+// };
+
+export const getUserAccountBySubaccountId = (userMap: UserMap, subaccountId: number): UserAccount | null => {
   const user = getUserBySubaccountId(userMap, subaccountId);
   if (!user) {
     console.warn(`No user found for subaccount ID: ${subaccountId}`);
     return null;
   }
-  
+
   try {
     return user.getUserAccount();
   } catch (err) {
@@ -199,6 +280,9 @@ export const getUserAccountBySubaccountId = (userMap: UserMap, subaccountId: num
 
 // Get balances for a subaccount
 export const getBalances = async (userMap: UserMap, subaccountId: number): Promise<SubaccountBalances> => {
+  const tempUser = userMap.driftClient.getUser()
+  console.log('tempUser Data', tempUser);
+  
   try {
     const user = getUserAccountBySubaccountId(userMap, subaccountId);
     if (!user) {
@@ -206,11 +290,13 @@ export const getBalances = async (userMap: UserMap, subaccountId: number): Promi
     }
 
     const balances: SubaccountBalances = {};
+    console.log('user', user);
     for (const token of user.spotPositions) {
       if (token.scaledBalance.gt(0)) {
-        const tokenName = token.marketIndex.toString();
-        balances[tokenName] = {
-          token: tokenName,
+        const tokenName = getMarketInfoByMarketIndex(token.marketIndex)?.symbol;
+        // const tokenName = token.marketIndex.toString();
+        balances[tokenName || token.marketIndex.toString()] = {
+          token: tokenName || token.marketIndex.toString(),
           balance: token.scaledBalance.toString(),
           value: token.scaledBalance.toString(),
           // value: token.value.toString(),
@@ -225,11 +311,26 @@ export const getBalances = async (userMap: UserMap, subaccountId: number): Promi
   }
 };
 
+const getMarketInfoByMarketIndex = (marketIndex: number, env: 'mainnet-beta' | 'devnet' = 'mainnet-beta') => {
+  return PerpMarkets[env].find(
+    (market: PerpMarketConfig) => market.marketIndex === marketIndex
+  );
+}
+
 export const getPerpPositions = async (userMap: UserMap, subaccountId: number): Promise<PerpPosition[]> => {
   try {
     // First, log to verify the params we're receiving
     console.log(`Getting positions for subaccount ID: ${subaccountId}`);
-    
+
+    const tempUser = userMap.driftClient.getUser()
+    const userAccountTemp = await tempUser.getUserAccount()
+    const userAccountTemp2 = await tempUser.fetchAccounts()
+    // console.log('Temp user positions', userAccountTemp.authority.toBase58());
+    // console.log('Temp user positions', userAccountTemp.name.toString());
+    // console.log('Fetched accounts', userAccountTemp2);
+    // console.log('Perp Markets', PerpMarkets['mainnet-beta']);
+
+
     // Get the user instance first
     let userInstance = null;
     try {
@@ -249,7 +350,7 @@ export const getPerpPositions = async (userMap: UserMap, subaccountId: number): 
       console.warn(`No user found for subaccount ID: ${subaccountId}`);
       return []; // Return empty array instead of throwing
     }
-    
+
     // Get the user account data
     let userAccount = null;
     try {
@@ -259,34 +360,35 @@ export const getPerpPositions = async (userMap: UserMap, subaccountId: number): 
       console.error("Error getting user account:", err);
       throw new Error(`Failed to get user account: ${err.message}`);
     }
-    
+
     // Verify perpPositions exists and is iterable
     if (!userAccount.perpPositions || !Array.isArray(userAccount.perpPositions)) {
       console.warn("User account has no perpPositions array:", userAccount);
       return []; // Return empty array
     }
-    
+
     console.log(`Found ${userAccount.perpPositions.length} perp positions`);
-    
+
     // Process positions safely
     const positions: PerpPosition[] = [];
-    
+
     for (const position of userAccount.perpPositions) {
       try {
         // Skip if position is not valid
         if (!position || !position.marketIndex) continue;
-        
+
         // Skip empty positions
-        const hasBaseAmount = position.baseAssetAmount && 
-                             typeof position.baseAssetAmount.gt === 'function' && 
-                             position.baseAssetAmount.gt(0);
-                             
-        const hasQuoteAmount = position.quoteAssetAmount && 
-                              typeof position.quoteAssetAmount.gt === 'function' && 
-                              position.quoteAssetAmount.gt(0);
-        
-        if (!hasBaseAmount && !hasQuoteAmount) continue;
-        
+        // const hasBaseAmount = position.baseAssetAmount &&
+        //   typeof position.baseAssetAmount.gt === 'function' &&
+        //   position.baseAssetAmount.gt(0);
+
+        const hasQuoteAmount = position.quoteAssetAmount &&
+          typeof position.quoteAssetAmount.gt === 'function' &&
+          position.quoteAssetAmount.gt(0);
+
+        if (!hasQuoteAmount) continue;
+        // if (!hasBaseAmount && !hasQuoteAmount) continue;
+
         // Add the position with safe conversions
         positions.push({
           marketIndex: position.marketIndex.toString(),
@@ -295,9 +397,10 @@ export const getPerpPositions = async (userMap: UserMap, subaccountId: number): 
           entryPrice: position.quoteEntryAmount || '0',
           breakEvenPrice: position.quoteBreakEvenAmount || '0',
           pnl: position.settledPnl || '0',
-          unrealizedPnl: position.remainderBaseAssetAmount ? 
-                        position.remainderBaseAssetAmount.toString() : '0',
-          direction: (hasBaseAmount && position.baseAssetAmount.gt(0)) ? 'LONG' : 'SHORT',
+          unrealizedPnl: position.remainderBaseAssetAmount ?
+            position.remainderBaseAssetAmount.toString() : '0',
+          direction: (position.baseAssetAmount.gt(0)) ? 'LONG' : 'SHORT',
+          // direction: (hasBaseAmount && position.baseAssetAmount.gt(0)) ? 'LONG' : 'SHORT',
         });
       } catch (posErr) {
         console.warn(`Error processing position at market index ${position?.marketIndex}:`, posErr);
@@ -306,7 +409,7 @@ export const getPerpPositions = async (userMap: UserMap, subaccountId: number): 
     }
 
     console.log('positions', positions);
-    
+
 
     return positions;
   } catch (error) {
@@ -325,16 +428,16 @@ export const getOpenOrders = async (userMap: UserMap, subaccountId: number): Pro
 
     const orders: OrderTypeModel[] = [];
     for (const order of user.orders) {
-      if (order.status === 'open') {
+      if (order.status === OrderStatus.OPEN) {
         orders.push({
           orderId: order.orderId.toString(),
           marketIndex: order.marketIndex.toString(),
           price: order.price.toString(),
           baseAssetAmount: order.baseAssetAmount.toString(),
           direction: order.direction === PositionDirection.LONG ? 'LONG' : 'SHORT',
-          orderType: order.orderType as string,
+          orderType: Object.keys(order.orderType)[0] as string,
           triggerPrice: order.triggerPrice?.toString() || null,
-          triggerCondition: order.triggerCondition as string || null,
+          triggerCondition: Object.keys(order.triggerCondition)[0] as string || null,
           timestamp: `${new Date().getTime() - order.auctionDuration}`,
         });
       }
@@ -539,41 +642,108 @@ export const placeMarketOrder = async (
 // };
 
 // Deposit funds to a subaccount
+/**
+ * Deposit funds to a subaccount
+ * @param payload The deposit payload including all required parameters
+ * @returns Transaction signature
+ */
 export const depositFunds = async ({
   driftClient,
   userMap,
   subaccountId,
   marketIndex,
   amount,
-  associatedTokenAccount,
   subAccountId,
   reduceOnly = false,
   txParams
-}: DepositFundPayload
-): Promise<string> => {
+}: DepositFundPayload): Promise<string> => {
   try {
-    const user = getUserAccountBySubaccountId(userMap, subaccountId);
+    const user = getUserBySubaccountId(userMap, subaccountId);
     if (!user) {
       throw new Error('Subaccount not found');
     }
 
-    // userMap.setActiveUser(subaccountId);
+    // Validate market index (only SOL or USDC)
+    if (marketIndex !== 0 && marketIndex !== 1) {
+      throw new Error('Only USDC (0) and SOL (1) deposits are supported');
+    }
 
-    const txSig = await driftClient.deposit(
-      marketIndex,
+    // Ensure we have a valid amount as BN
+    if (!amount || !(amount instanceof BN)) {
+      throw new Error('Invalid amount for deposit');
+    }
+
+    const associatedTokenAccount = await driftClient.getAssociatedTokenAccount(marketIndex);
+
+    const payload = {
       amount,
+      marketIndex,
       associatedTokenAccount,
-      subAccountId,
+      subAccountId: subAccountId || subaccountId,
       reduceOnly,
       txParams
+    }
+
+    console.log('payload', payload);
+    
+
+    // Make the deposit call with appropriate parameters
+    const txSig = await driftClient.deposit(
+      amount, // amount as BN
+      marketIndex,
+      associatedTokenAccount,
+      subAccountId || subaccountId,
+      // undefined,
+      // txParams,
+      reduceOnly,
+      {
+        ...txParams,
+        computeUnitsPrice: 10_000,
+      }
     );
 
+    console.log(`Deposit successful: ${txSig}`);
     return txSig;
   } catch (error) {
     console.error('Error depositing funds:', error);
     throw error;
   }
 };
+// export const depositFunds = async ({
+//   driftClient,
+//   userMap,
+//   subaccountId,
+//   marketIndex,
+//   amount,
+//   associatedTokenAccount,
+//   subAccountId,
+//   reduceOnly = false,
+//   // txParams
+// }: DepositFundPayload
+// ): Promise<string> => {
+//   try {
+//     const user = getUserAccountBySubaccountId(userMap, subaccountId);
+//     if (!user) {
+//       throw new Error('Subaccount not found');
+//     }
+
+//     // userMap.setActiveUser(subaccountId);
+
+//     const txSig = await driftClient.deposit(
+//       marketIndex,
+//       amount,
+//       associatedTokenAccount,
+//       subAccountId,
+//       reduceOnly,
+//       // txParams
+//     );
+
+//     return txSig;
+//   } catch (error) {
+//     console.error('Error depositing funds:', error);
+//     throw error;
+//   }
+// };
 
 // Withdraw funds from a subaccount
 export const withdrawFunds = async ({

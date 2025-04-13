@@ -10,6 +10,8 @@ import { formatLargeNumber } from '@/utils';
 import { getSubaccounts, getBalances, getPerpPositions, getOpenOrders, initializeDriftClient } from '@/utils/driftUtils';
 import { UserMap } from '@drift-labs/sdk';
 import { OrderType, PerpPosition, Subaccount, SubaccountBalances } from '@/types/drift';
+import { Transaction, VersionedTransaction } from '@hermis/solana-headless-core';
+import { AnchorWallet, useConnection } from '@hermis/solana-headless-react';
 
 export default function LookupWalletModal() {
   const { closeWalletLookupModal, isWalletLookupModalOpen } = useDriftStore();
@@ -28,6 +30,13 @@ export default function LookupWalletModal() {
   const [lookupOrders, setLookupOrders] = useState<OrderType[]>([]);
   
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const { connection } = useConnection();
+  const wallet = {
+    publicKey: new PublicKey(lookupWalletAddress || ''),
+    signTransaction: async (tx: Transaction | VersionedTransaction) => tx,
+    signAllTransactions: async (txs: Transaction[] | VersionedTransaction[]) => txs,
+  }
+
   
   // Initialize lookup wallet and fetch data
   useEffect(() => {
@@ -39,8 +48,10 @@ export default function LookupWalletModal() {
         setError('');
         
         // First, initialize a temporary client for the lookup wallet
-        const publicKey = new PublicKey(lookupWalletAddress);
-        const client = await initializeDriftClient(publicKey);
+        const client = await initializeDriftClient(
+          connection,
+          wallet as AnchorWallet
+        );
         
         if (!client || !client.userMap) {
           setHasDriftAccount(false);
@@ -119,7 +130,10 @@ export default function LookupWalletModal() {
       if (!lookupWalletAddress) return;
       setIsLoadingData(true);
       const publicKey = new PublicKey(lookupWalletAddress);
-      const client = await initializeDriftClient(publicKey);
+      const client = await initializeDriftClient(
+        connection,
+        wallet as AnchorWallet
+      );
       
       if (client?.userMap) {
         const subaccountId = lookupSubaccounts[index]?.id;

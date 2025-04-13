@@ -77,10 +77,21 @@ export default function Dashboard() {
   // Fetch subaccount data when selected subaccount changes
   useEffect(() => {
     const fetchSubaccountData = async () => {
-      if (!userMap || subaccounts.length === 0) return;
+      if (!userMap || subaccounts.length === 0) {
+        // Clear data if there are no subaccounts
+        setBalances({});
+        setPositions([]);
+        setOrders([]);
+        return;
+      }
       
-      const subaccountId = subaccounts[selectedSubaccountIndex]?.id;
-      if (subaccountId === undefined) return;
+      const subaccount = subaccounts[selectedSubaccountIndex];
+      if (!subaccount) {
+        console.warn("No valid subaccount at index", selectedSubaccountIndex);
+        return;
+      }
+      
+      const subaccountId = subaccount.id;
       
       // Fetch balances
       try {
@@ -89,6 +100,7 @@ export default function Dashboard() {
         setBalances(accountBalances);
       } catch (error) {
         console.error('Error fetching balances:', error);
+        setBalances({}); // Set empty on error
       } finally {
         setBalancesLoading(false);
       }
@@ -100,6 +112,7 @@ export default function Dashboard() {
         setPositions(perpPositions);
       } catch (error) {
         console.error('Error fetching positions:', error);
+        setPositions([]); // Set empty on error
       } finally {
         setPositionsLoading(false);
       }
@@ -111,6 +124,7 @@ export default function Dashboard() {
         setOrders(openOrders);
       } catch (error) {
         console.error('Error fetching orders:', error);
+        setOrders([]); // Set empty on error
       } finally {
         setOrdersLoading(false);
       }
@@ -128,6 +142,59 @@ export default function Dashboard() {
     setPositionsLoading,
     setOrdersLoading,
   ]);
+  // useEffect(() => {
+  //   const fetchSubaccountData = async () => {
+  //     if (!userMap || subaccounts.length === 0) return;
+      
+  //     const subaccountId = subaccounts[selectedSubaccountIndex]?.id;
+  //     if (subaccountId === undefined) return;
+      
+  //     // Fetch balances
+  //     try {
+  //       setBalancesLoading(true);
+  //       const accountBalances = await getBalances(userMap, subaccountId);
+  //       setBalances(accountBalances);
+  //     } catch (error) {
+  //       console.error('Error fetching balances:', error);
+  //     } finally {
+  //       setBalancesLoading(false);
+  //     }
+      
+  //     // Fetch positions
+  //     try {
+  //       setPositionsLoading(true);
+  //       const perpPositions = await getPerpPositions(userMap, subaccountId);
+  //       setPositions(perpPositions);
+  //     } catch (error) {
+  //       console.error('Error fetching positions:', error);
+  //     } finally {
+  //       setPositionsLoading(false);
+  //     }
+      
+  //     // Fetch orders
+  //     try {
+  //       setOrdersLoading(true);
+  //       const openOrders = await getOpenOrders(userMap, subaccountId);
+  //       setOrders(openOrders);
+  //     } catch (error) {
+  //       console.error('Error fetching orders:', error);
+  //     } finally {
+  //       setOrdersLoading(false);
+  //     }
+  //   };
+    
+  //   fetchSubaccountData();
+  // }, [
+  //   userMap, 
+  //   subaccounts, 
+  //   selectedSubaccountIndex, 
+  //   setBalances, 
+  //   setPositions, 
+  //   setOrders,
+  //   setBalancesLoading,
+  //   setPositionsLoading,
+  //   setOrdersLoading,
+  // ]);
   
   // Render dashboard when wallet is connected or a lookup address is provided
   const shouldRenderDashboard = connected || lookupWalletAddress;

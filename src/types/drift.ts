@@ -1,4 +1,4 @@
-import { DriftClient, UserMap, PerpMarkets, BulkAccountLoader, TxParams, User } from '@drift-labs/sdk';
+import { DriftClient, UserMap, PerpMarkets, BulkAccountLoader, TxParams, User, BN } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 // Main Drift client interfaces
@@ -100,8 +100,8 @@ export interface DepositFundPayload {
   userMap: UserMap,
   subaccountId: number,
   marketIndex: number,
-  amount: number,
-  associatedTokenAccount: PublicKey,
+  amount: BN,
+  // associatedTokenAccount: PublicKey,
   subAccountId?: number,
   reduceOnly?: boolean,
   txParams?: TxParams

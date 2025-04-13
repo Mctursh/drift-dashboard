@@ -90,7 +90,12 @@ const useDriftStore = create<DriftStore>((set) => ({
   ...initialState,
   
   // Set Drift SDK instances
-  setDriftClient: (driftClient: DriftClient | null) => set({ driftClient }),
+  setDriftClient: (driftClient: DriftClient | null) => {
+    if (driftClient) {
+      console.log("Setting Drift client with wallet:", driftClient.wallet.publicKey?.toBase58());
+    }
+    set({ driftClient });
+  },
   setUserMap: (userMap: UserMap | null) => set({ userMap }),
 //   setUserStatsAccount: (userStatsAccount: string | null) => set({ userStatsAccount }),
   
