@@ -1,17 +1,20 @@
 // app/components/PerpOrderForm.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowDown, FiArrowUp, FiCheck, FiX } from 'react-icons/fi';
-import { placeMarketOrder } from '../utils/driftUtils';
+import { placeLimitOrder, placeMarketOrder } from '../utils/driftUtils';
 import useDriftStore from '../store/driftStore';
 import useSubaccountStore from '../store/subaccountStore';
+import { PlaceOrderPayload } from '@/types/drift';
+import { BN, PerpMarketConfig } from '@drift-labs/sdk';
 
 export default function PerpOrderForm({ isModal = false }) {
   const { 
     driftClient, 
     userMap, 
+    markets,
     closePerpOrderModal,
     orderType,
     setOrderType,
@@ -27,6 +30,19 @@ export default function PerpOrderForm({ isModal = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [availableMarkets, setAvailableMarkets] = useState<PerpMarketConfig[]>([]);
+  
+  useEffect(() => {
+    if (markets) {
+      const perpMarkets = markets['mainnet-beta'] || [];
+      const sortedMarkets = [...perpMarkets].sort((a, b) => a.marketIndex - b.marketIndex);
+      setAvailableMarkets(sortedMarkets);
+      
+      if (sortedMarkets.length > 0 && !marketIndex) {
+        setMarketIndex(sortedMarkets[0].marketIndex.toString());
+      }
+    }
+  }, [markets]);
   
   const handlePlaceOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,30 +73,31 @@ export default function PerpOrderForm({ isModal = false }) {
       setError('');
       setSuccess('');
       
-      // let txSig;
+      let txSig;
+      let payload: PlaceOrderPayload = {
+        driftClient,
+        userMap,
+        subaccountId,
+        marketIndex: parseInt(marketIndex),
+        size: new BN(parseFloat(size)),
+        direction: orderDirection,
+        orderType
+      }
       
-      // if (orderType === 'MARKET') {
-      //   txSig = await placeMarketOrder(
-      //     driftClient,
-      //     userMap,
-      //     subaccountId,
-      //     parseInt(marketIndex),
-      //     parseFloat(size),
-      //     orderDirection
-      //   );
-      // } else {
-      //   txSig = await placeLimitOrder(
-      //     driftClient,
-      //     userMap,
-      //     subaccountId,
-      //     parseInt(marketIndex),
-      //     parseFloat(size),
-      //     parseFloat(price),
-      //     orderDirection
-      //   );
-      // }
+      if (orderType === 'MARKET') {
+        payload.orderType = 'MARKET';
+
+        console.log('payload', payload);
+        txSig = await placeLimitOrder(payload);
+      } else {
+        payload.orderType = 'LIMIT';
+        payload.price = new BN(price);
+
+        console.log('payload', payload);
+        txSig = await placeLimitOrder(payload);
+      }
       
-      // setSuccess(`Order placed successfully! Transaction: ${txSig.slice(0, 8)}...`);
+      setSuccess(`Order placed successfully! Transaction: ${txSig.slice(0, 8)}...`);
       
       // Reset form
       setSize('');
@@ -134,9 +151,15 @@ export default function PerpOrderForm({ isModal = false }) {
               onChange={(e) => setMarketIndex(e.target.value)}
               className="input w-full"
             >
-              <option value="0">BTC-PERP</option>
-              <option value="1">ETH-PERP</option>
-              <option value="2">SOL-PERP</option>
+              {availableMarkets.length === 0 ? (
+                <option value="">Loading markets...</option>
+              ) : (
+                availableMarkets.map((market) => (
+                  <option key={market.marketIndex} value={market.marketIndex.toString()}>
+                    {market.symbol || `PERP-${market.marketIndex}`}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           

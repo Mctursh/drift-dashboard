@@ -119,3 +119,14 @@ export interface WithdrawFundPayload {
   txParams?: TxParams,
   updateFuel?: boolean
 }
+
+export interface PlaceOrderPayload {
+  driftClient: DriftClient,
+  userMap: UserMap,
+  subaccountId: number,
+  marketIndex: number,
+  size: BN,
+  price?: BN,
+  direction: 'LONG' | 'SHORT',
+  orderType: 'MARKET' | 'LIMIT',
+}

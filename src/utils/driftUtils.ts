@@ -19,6 +19,12 @@ import {
   OrderStatus,
   Wallet,
   QUOTE_PRECISION,
+  BASE_PRECISION,
+  decodeName,
+  convertToNumber,
+  PRICE_PRECISION,
+  getVariant,
+  getOrderParams,
 } from '@drift-labs/sdk';
 import {
   DriftClientConfig,
@@ -28,7 +34,8 @@ import {
   OrderType as OrderTypeModel,
   TransactionResponse,
   DepositFundPayload,
-  WithdrawFundPayload
+  WithdrawFundPayload,
+  PlaceOrderPayload
 } from '@/types/drift';
 import { TransactionInstruction } from '@solana/web3.js';
 import { AnchorWallet, useAnchorWallet, } from '@hermis/solana-headless-react';
@@ -485,38 +492,59 @@ export const placeMarketOrder = async (
 };
 
 // Place a limit order
-// export const placeLimitOrder = async (
-//   driftClient: DriftClient,
-//   userMap: UserMap,
-//   subaccountId: number,
-//   marketIndex: number,
-//   size: number,
-//   price: number,
-//   direction: 'LONG' | 'SHORT'
-// ): Promise<string> => {
-//   try {
-//     const user = getUserAccountBySubaccountId(userMap, subaccountId);
-//     if (!user) {
-//       throw new Error('Subaccount not found');
-//     }
+export const placeLimitOrder = async ({
+  driftClient,
+  userMap,
+  subaccountId,
+  marketIndex,
+  size,
+  price,
+  direction,
+  orderType
+}: PlaceOrderPayload
+): Promise<string> => {
+  try {
+    const user = getUserAccountBySubaccountId(userMap, subaccountId);
+    if (!user) {
+      throw new Error('Subaccount not found');
+    }
 
-//     // userMap.setActiveUser(subaccountId);
+    // Convert size to BN before division
+    const orderSize = BASE_PRECISION.mul(new BN(size.toString()));
+    // Convert string direction to proper enum
+    const orderDirection = direction === 'LONG' ? PositionDirection.LONG : PositionDirection.SHORT;
+    // Convert string orderType to proper enum
+    const sdkOrderType = orderType === 'MARKET' ? OrderType.MARKET : OrderType.LIMIT;
 
-//     const txSig = await driftClient.placeOrder({
-//       marketIndex,
-//       direction: direction === 'LONG' ? PositionDirection.LONG : PositionDirection.SHORT,
-//       orderType: OrderType.LIMIT,
-//       baseAssetAmount: size,
-//       price,
-//       reduceOnly: false,
-//     });
+    const perpMarket = driftClient.getPerpMarketAccount(marketIndex)!;
+    const mktName = decodeName(perpMarket.name);
 
-//     return txSig;
-//   } catch (error) {
-//     console.error('Error placing limit order:', error);
-//     throw error;
-//   }
-// };
+    const oracle = driftClient.getOracleDataForPerpMarket(marketIndex);
+
+    console.log(`Current oracle price: ${convertToNumber(oracle.price, PRICE_PRECISION)}`);
+    console.log(`\nPlacing a ${getVariant(orderDirection)} order for ${convertToNumber(orderSize, BASE_PRECISION)} ${mktName} at $${price ? convertToNumber(price, PRICE_PRECISION) : 'market'}`);
+
+    // Place the order
+    const tx = await driftClient.placePerpOrder(
+      getOrderParams({
+        orderType: sdkOrderType,
+        marketIndex,
+        baseAssetAmount: orderSize,
+        direction: orderDirection,
+        price,
+      }),
+      {
+        computeUnitsPrice: 1_000,
+      }
+    );
+
+    console.log(`Place perp order tx: https://solscan.io/tx/${tx}`);
+    return tx;
+  } catch (error) {
+    console.error('Error placing limit order:', error);
+    throw error;
+  }
+};
 
 // Place a take profit order
 // export const placeTakeProfitOrder = async (
@@ -684,7 +712,7 @@ export const depositFunds = async ({
       txParams
     }
 
-    console.log('payload', payload);
+
     
 
     // Make the deposit call with appropriate parameters
@@ -707,41 +735,6 @@ export const depositFunds = async ({
     throw error;
   }
 };
-// export const depositFunds = async ({
-//   driftClient,
-//   userMap,
-//   subaccountId,
-//   marketIndex,
-//   amount,
-//   associatedTokenAccount,
-//   subAccountId,
-//   reduceOnly = false,
-//   // txParams
-// }: DepositFundPayload
-// ): Promise<string> => {
-//   try {
-//     const user = getUserAccountBySubaccountId(userMap, subaccountId);
-//     if (!user) {
-//       throw new Error('Subaccount not found');
-//     }
-
-//     // userMap.setActiveUser(subaccountId);
-
-//     const txSig = await driftClient.deposit(
-//       marketIndex,
-//       amount,
-//       associatedTokenAccount,
-//       subAccountId,
-//       reduceOnly,
-//       // txParams
-//     );
-
-//     return txSig;
-//   } catch (error) {
-//     console.error('Error depositing funds:', error);
-//     throw error;
-//   }
-// };
 
 // Withdraw funds from a subaccount
 export const withdrawFunds = async ({
