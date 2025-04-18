@@ -1,4 +1,3 @@
-// "use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -58,13 +57,8 @@ const WalletConnection = () => {
   }, [wallet]);
 
 
-  // If wallet exists but drift client doesn't, initialize client
   useEffect(() => {
     const initClient = async () => {
-      console.log('connected', connected);
-      console.log('wallet', wallet);
-      console.log('publicKey', publicKey);
-      console.log('driftClient', driftClient);
       
       if (wallet && connected && !driftClient) {
         console.log('WalletConnector: Initializing Drift client');
@@ -96,9 +90,7 @@ const WalletConnection = () => {
     const messageBytes = new TextEncoder().encode(message);
     const signature = await signMessage(messageBytes);
     const signatureMatched = verifySignedMessage(message, signature, selectedAdapterPublickey.toBase58())
-    console.log('is True', signatureMatched);
     if (signatureMatched) {
-      // setPublicKey(new PublicKey('arbJEWqPDYfgTFf3CdACQpZrk56tB6z7hPFc6K9KLUi'));
       setWallet(wallets.find(w => w.adapter.connected) || null);
       setPublicKey(selectedAdapterPublickey);
       setConnected(true);
@@ -121,7 +113,6 @@ const WalletConnection = () => {
     initializeDriftClient(
       connection, 
       wallet
-      // new PublicKey('arbJEWqPDYfgTFf3CdACQpZrk56tB6z7hPFc6K9KLUi')
     ).then(client => {
       console.log('client', client);
       setDriftClient(client.driftClient);

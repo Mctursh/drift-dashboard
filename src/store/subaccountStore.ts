@@ -2,16 +2,13 @@ import { create } from 'zustand';
 import { Subaccount, SubaccountBalances, PerpPosition, OrderType } from '@/types/drift';
 
 interface SubaccountState {
-  // User subaccounts
   subaccounts: Subaccount[];
   selectedSubaccountIndex: number;
   
-  // Selected subaccount data
   balances: SubaccountBalances;
   positions: PerpPosition[];
   orders: OrderType[];
   
-  // Loading states
   loading: boolean;
   balancesLoading: boolean;
   positionsLoading: boolean;
@@ -19,7 +16,6 @@ interface SubaccountState {
 }
 
 interface SubaccountActions {
-  // Actions
   setSubaccounts: (subaccounts: Subaccount[]) => void;
   setSelectedSubaccountIndex: (index: number) => void;
   
@@ -32,10 +28,8 @@ interface SubaccountActions {
   setPositionsLoading: (loading: boolean) => void;
   setOrdersLoading: (loading: boolean) => void;
   
-  // Getters
   getSelectedSubaccount: () => Subaccount | null;
   
-  // Reset subaccount state
   resetSubaccountState: () => void;
 }
 
@@ -56,7 +50,6 @@ const initialState: SubaccountState = {
 const useSubaccountStore = create<SubaccountStore>((set, get) => ({
   ...initialState,
   
-  // Actions
   setSubaccounts: (subaccounts: Subaccount[]) => set({ subaccounts }),
   setSelectedSubaccountIndex: (index: number) => set({ selectedSubaccountIndex: index }),
   
@@ -69,13 +62,11 @@ const useSubaccountStore = create<SubaccountStore>((set, get) => ({
   setPositionsLoading: (loading: boolean) => set({ positionsLoading: loading }),
   setOrdersLoading: (loading: boolean) => set({ ordersLoading: loading }),
   
-  // Getters
   getSelectedSubaccount: () => {
     const { subaccounts, selectedSubaccountIndex } = get();
     return subaccounts[selectedSubaccountIndex] || null;
   },
   
-  // Reset subaccount state
   resetSubaccountState: () => set({
     subaccounts: [],
     selectedSubaccountIndex: 0,

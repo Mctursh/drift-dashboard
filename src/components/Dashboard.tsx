@@ -1,4 +1,3 @@
-// app/components/Dashboard.js
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -50,10 +49,8 @@ export default function Dashboard() {
   
   const [activeTab, setActiveTab] = useState('balances');
   
-  // Fetch subaccounts on wallet connection or lookup
   useEffect(() => {
     const fetchSubaccounts = async () => {
-      console.log('userMap', userMap);
       if (!userMap) return;
       
       try {
@@ -74,11 +71,9 @@ export default function Dashboard() {
     fetchSubaccounts();
   }, [userMap, setSubaccounts, setSelectedSubaccountIndex, setLoading]);
   
-  // Fetch subaccount data when selected subaccount changes
   useEffect(() => {
     const fetchSubaccountData = async () => {
       if (!userMap || subaccounts.length === 0) {
-        // Clear data if there are no subaccounts
         setBalances({});
         setPositions([]);
         setOrders([]);
@@ -93,10 +88,8 @@ export default function Dashboard() {
       
       const subaccountId = subaccount.id;
       
-      // Set a single loading state for all data fetching
       setLoading(true);
       
-      // Create fetch functions that handle their own errors
       const fetchBalances = async () => {
         try {
           return await getBalances(userMap, subaccountId);
@@ -124,7 +117,6 @@ export default function Dashboard() {
         }
       };
       
-      // Execute all fetch operations in parallel
       try {
         const [balancesData, positionsData, ordersData] = await Promise.all([
           fetchBalances(),
@@ -153,10 +145,6 @@ export default function Dashboard() {
     setOrders,
     setLoading
   ]);
-  
-  // Render dashboard when wallet is connected or a lookup address is provided
-  // const shouldRenderDashboard = connected
-  // lookupWalletAddress;
 
   if (!connected) {
     return (
@@ -187,7 +175,7 @@ export default function Dashboard() {
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
+
           <div className="lg:col-span-1">
             <SubaccountList 
               subaccounts={subaccounts} 
@@ -197,7 +185,6 @@ export default function Dashboard() {
             />
           </div>
           
-          {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="mb-6">
               <motion.div
@@ -216,7 +203,6 @@ export default function Dashboard() {
                 )}
               </motion.div>
               
-              {/* Tabs */}
               <div className="border-b border-border">
                 <nav className="flex space-x-8" aria-label="Tabs">
                   <button
@@ -267,7 +253,6 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Tab Content */}
             <div className="mt-6">
               {activeTab === 'balances' && (
                 <BalanceView balances={balances} loading={balancesLoading} />
@@ -289,7 +274,6 @@ export default function Dashboard() {
         </div>
       </motion.div>
       
-      {/* Modals */}
       {isDepositModalOpen && <DepositModal />}
       {isWithdrawModalOpen && <WithdrawModal />}
       {isPerpOrderModalOpen && <PerpOrderForm isModal />}

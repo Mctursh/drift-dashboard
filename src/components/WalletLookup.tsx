@@ -20,15 +20,12 @@ export default function WalletLookup() {
     }
 
     try {
-      // Validate Solana address
       new PublicKey(address);
       setIsValidAddress(true);
       
-      // Set the lookup wallet address and open the modal
       setLookupWalletAddress(address);
       openWalletLookupModal();
       
-      // Clear the input field
       setInputValue('');
     } catch (error) {
       setIsValidAddress(false);

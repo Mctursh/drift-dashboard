@@ -1,4 +1,3 @@
-// app/components/Navbar.js
 'use client';
 
 import { useState } from 'react';
@@ -30,13 +29,11 @@ export default function Navbar() {
             </motion.div>
           </div>
           
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <WalletLookup />
             <WalletConnector />
           </div>
           
-          {/* Mobile menu button */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -48,7 +45,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMenuOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}

@@ -1,11 +1,8 @@
 import { ReactNode } from 'react';
 import { Subaccount, TokenBalance, PerpPosition, OrderType } from './drift';
-import { WalletAdapterNetwork } from '@hermis/solana-headless-react';
 
-// Component props
 export interface SolanaProviderProps {
   children: ReactNode;
-  // network: WalletAdapterNetwork;
 }
 
 export interface SubaccountListProps {

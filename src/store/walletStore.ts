@@ -15,7 +15,6 @@ const initialState: WalletState = {
 const useWalletStore = create<WalletStore>((set) => ({
   ...initialState,
   
-  // Actions
   setWallet: (wallet: Wallet | null) => set({ wallet, publicKey: wallet?.adapter.publicKey }),
   setPublicKey: (publicKey: PublicKey | null) => {
     console.log("Setting public key in store:", publicKey?.toBase58());
@@ -26,7 +25,6 @@ const useWalletStore = create<WalletStore>((set) => ({
   setDisconnecting: (disconnecting: boolean) => set({ disconnecting }),
   setLookupWalletAddress: (address: string | null) => set({ lookupWalletAddress: address }),
   
-  // Reset wallet state
   disconnect: () => set({
     wallet: null,
     publicKey: null,

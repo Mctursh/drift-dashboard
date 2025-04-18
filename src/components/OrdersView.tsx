@@ -1,4 +1,3 @@
-// app/components/OrdersView.js
 'use client';
 
 import { motion } from 'framer-motion';
@@ -18,11 +17,9 @@ export default function OrdersView({ orders, loading }: { orders: any, loading: 
     
     try {
       setOrdersLoading(true);
-      // userMap.setActiveUser(subaccountId);
       
       await driftClient.cancelOrder(parseInt(orderId));
       
-      // Update orders
       const updatedOrders = orders.filter((order: any) => order.orderId !== orderId);
       setOrders(updatedOrders);
     } catch (error) {

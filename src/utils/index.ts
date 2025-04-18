@@ -13,7 +13,7 @@ export const verifySignedMessage = (
   };
   
   export const generateMessage = (): string => {
-    const nonce = new Date().getTime(); // Unique timestamp-based nonce
+    const nonce = new Date().getTime();
       const message = `Sign this message to verify ownership. Nonce: ${nonce}`;
       return message
   }
@@ -31,7 +31,6 @@ export const verifySignedMessage = (
     const str = num.toString();
     if (str.length <= 4) return str;
     
-    // Remove decimal points and format
     const [whole, decimal] = str.split('.');
     const formattedWhole = whole.slice(0, 4) + '...';
     

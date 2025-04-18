@@ -1,4 +1,3 @@
-// app/components/PerpOrderForm.js
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -99,7 +98,6 @@ export default function PerpOrderForm({ isModal = false }) {
       
       setSuccess(`Order placed successfully! Transaction: ${txSig.slice(0, 8)}...`);
       
-      // Reset form
       setSize('');
       setPrice('');
       

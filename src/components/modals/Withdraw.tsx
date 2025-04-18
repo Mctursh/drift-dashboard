@@ -1,4 +1,3 @@
-// app/components/WithdrawModal.js
 'use client';
 
 import { useState } from 'react';

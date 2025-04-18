@@ -1,10 +1,8 @@
-// app/components/TakeProfitStopLossForm.js
 'use client';
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheck, FiX } from 'react-icons/fi';
-import { placeMarketOrder } from '../utils/driftUtils';
 import useDriftStore from '../store/driftStore';
 import useSubaccountStore from '../store/subaccountStore';
 import { PerpPosition } from '@/types/drift';
@@ -69,41 +67,6 @@ export default function TakeProfitStopLossForm() {
       setIsSubmitting(true);
       setError('');
       setSuccess('');
-      
-      // const results = [];
-      
-      // Place take profit order if price is set
-      // if (takeProfitPrice && !isNaN(parseFloat(takeProfitPrice))) {
-      //   const tpTxSig = await placeMarketOrder(
-      //   // const tpTxSig = await placeTakeProfitOrder(
-      //     driftClient,
-      //     userMap,
-      //     subaccountId,
-      //     parseInt(marketIndex),
-      //     parseFloat(size),
-      //     parseFloat(takeProfitPrice),
-      //     direction as 'LONG' | 'SHORT'
-      //   );
-      //   results.push(`TP order: ${tpTxSig.slice(0, 6)}...`);
-      // }
-      
-      // // Place stop loss order if price is set
-      // if (stopLossPrice && !isNaN(parseFloat(stopLossPrice))) {
-      //   const slTxSig = await placeStopLossOrder(
-      //     driftClient,
-      //     userMap,
-      //     subaccountId,
-      //     parseInt(marketIndex),
-      //     parseFloat(size),
-      //     parseFloat(stopLossPrice),
-      //     direction as 'LONG' | 'SHORT'
-      //   );
-      //   results.push(`SL order: ${slTxSig.slice(0, 6)}...`);
-      // }
-      
-      // setSuccess(`Orders placed successfully! ${results.join(', ')}`);
-      
-      // Reset form
       setTakeProfitPrice('');
       setStopLossPrice('');
       

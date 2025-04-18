@@ -1,4 +1,3 @@
-// src/components/modals/Deposit.tsx
 'use client';
 
 import { useState } from 'react';
@@ -13,7 +12,7 @@ export default function DepositModal() {
   const { driftClient, userMap, closeDepositModal } = useDriftStore();
   const { subaccounts, selectedSubaccountIndex } = useSubaccountStore();
 
-  const [marketIndex, setMarketIndex] = useState('0'); // Default to USDC
+  const [marketIndex, setMarketIndex] = useState('0'); 
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -47,14 +46,11 @@ export default function DepositModal() {
         throw new Error('Wallet not connected');
       }
 
-      // Parse the market index and amount
       const marketIndexNum = parseInt(marketIndex);
       const amountBN = new BN(amount).mul(QUOTE_PRECISION);
 
-      // console.log(`Depositing ${amount} of market ${marketIndexNum} (amount in smallest unit: ${amountInSmallestUnit.toString()})`);
 
       try {
-        // Check if user account exists
         let userAccountExists = false;
         try {
           const userAccount = await driftClient.getUserAccount();
@@ -66,12 +62,10 @@ export default function DepositModal() {
           console.log('User account does not exist yet. Will initialize.');
         }
 
-        // If user account doesn't exist, initialize it
         if (!userAccountExists) {
           console.log('Initializing user account...');
 
           try {
-            // Check if user stats account exists by trying to get its public key
             let userStatsAccountExists = false;
             try {
               const userStatsAccountPk = driftClient.getUserStatsAccountPublicKey();
@@ -82,12 +76,9 @@ export default function DepositModal() {
               console.log('Error checking user stats account, assuming it does not exist:', statsCheckError);
             }
 
-            // Initialize user stats if needed
             if (!userStatsAccountExists) {
               console.log('Initializing user stats account...');
 
-              // Get the instruction to initialize user stats
-              // const userStatsIx = await driftClient.getInitializeUserStatsIx();
               const [userStatsTxSig, userStatsAccountPublicKey] = await driftClient.initializeUserAccount(
                 0,
                 'John Doe'
@@ -95,7 +86,6 @@ export default function DepositModal() {
 
             }
 
-            // Need to reload the user after initialization
             await driftClient.subscribe();
 
           } catch (initError: any) {
@@ -131,7 +121,6 @@ export default function DepositModal() {
       } catch (txError: any) {
         console.error('Transaction error:', txError);
 
-        // Check if it's a SendTransactionError and try to get more details
         if (txError.name === 'SendTransactionError' && typeof txError.getLogs === 'function') {
           const logs = txError.getLogs();
           console.error('Transaction logs:', logs);

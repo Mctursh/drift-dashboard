@@ -75,11 +75,9 @@ const initialState: DriftState = {
   orderPrice: '',
   orderDirection: 'LONG',
   
-  // TP/SL form state
   takeProfitPrice: '',
   stopLossPrice: '',
   
-  // Scaled orders state
   scaledOrdersCount: 2,
   priceRangeStart: '',
   priceRangeEnd: '',
@@ -89,7 +87,6 @@ const initialState: DriftState = {
 const useDriftStore = create<DriftStore>((set) => ({
   ...initialState,
   
-  // Set Drift SDK instances
   setDriftClient: (driftClient: DriftClient | null) => {
     if (driftClient) {
       console.log("Setting Drift client with wallet:", driftClient.wallet.publicKey?.toBase58());
@@ -97,13 +94,10 @@ const useDriftStore = create<DriftStore>((set) => ({
     set({ driftClient });
   },
   setUserMap: (userMap: UserMap | null) => set({ userMap }),
-//   setUserStatsAccount: (userStatsAccount: string | null) => set({ userStatsAccount }),
   
-  // Set markets
   setMarkets: (markets: typeof PerpMarkets | null) => set({ markets }),
   setSelectedMarket: (market: string | null) => set({ selectedMarket: market }),
   
-  // Modal controls
   openDepositModal: () => set({ isDepositModalOpen: true }),
   closeDepositModal: () => set({ isDepositModalOpen: false }),
   openWithdrawModal: () => set({ isWithdrawModalOpen: true }),
@@ -117,23 +111,19 @@ const useDriftStore = create<DriftStore>((set) => ({
   openWalletLookupModal: () => set({ isWalletLookupModalOpen: true }),
   closeWalletLookupModal: () => set({ isWalletLookupModalOpen: false }),
   
-  // Order form actions
   setOrderType: (type: 'MARKET' | 'LIMIT') => set({ orderType: type }),
   setOrderSize: (size: string) => set({ orderSize: size }),
   setOrderPrice: (price: string) => set({ orderPrice: price }),
   setOrderDirection: (direction: 'LONG' | 'SHORT') => set({ orderDirection: direction }),
   
-  // TP/SL form actions
   setTakeProfitPrice: (price: string) => set({ takeProfitPrice: price }),
   setStopLossPrice: (price: string) => set({ stopLossPrice: price }),
   
-  // Scaled orders actions
   setScaledOrdersCount: (count: number) => set({ scaledOrdersCount: count }),
   setPriceRangeStart: (price: string) => set({ priceRangeStart: price }),
   setPriceRangeEnd: (price: string) => set({ priceRangeEnd: price }),
   setTotalSize: (size: string) => set({ totalSize: size }),
   
-  // Reset order state
   resetOrderState: () => set({
     orderType: 'MARKET',
     orderSize: '',
@@ -147,11 +137,9 @@ const useDriftStore = create<DriftStore>((set) => ({
     totalSize: '',
   }),
   
-  // Reset Drift state
   resetDriftState: () => set({
     driftClient: null,
     userMap: null,
-    // userStatsAccount: null,
     markets: null,
     selectedMarket: null,
   }),

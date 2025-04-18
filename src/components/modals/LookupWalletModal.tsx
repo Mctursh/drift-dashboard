@@ -22,7 +22,6 @@ export default function LookupWalletModal() {
   const [activeTab, setActiveTab] = useState('balances');
   const [error, setError] = useState('');
   
-  // Lookup wallet data
   const [lookupSubaccounts, setLookupSubaccounts] = useState<Subaccount[]>([]);
   const [selectedSubaccountIndex, setSelectedSubaccountIndex] = useState(0);
   const [lookupBalances, setLookupBalances] = useState<SubaccountBalances>({});
@@ -38,7 +37,6 @@ export default function LookupWalletModal() {
   }
 
   
-  // Initialize lookup wallet and fetch data
   useEffect(() => {
     const initLookupWallet = async () => {
       if (!lookupWalletAddress || !isWalletLookupModalOpen) return;
@@ -47,7 +45,6 @@ export default function LookupWalletModal() {
         setLoading(true);
         setError('');
         
-        // First, initialize a temporary client for the lookup wallet
         const client = await initializeDriftClient(
           connection,
           wallet as AnchorWallet
@@ -58,7 +55,6 @@ export default function LookupWalletModal() {
           return;
         }
         
-        // Get subaccounts
         const accounts = await getSubaccounts(client.userMap);
         
         if (accounts && accounts.length > 0) {
@@ -66,7 +62,6 @@ export default function LookupWalletModal() {
           setLookupSubaccounts(accounts);
           setSelectedSubaccountIndex(0);
           
-          // Get data for the first subaccount
           await fetchSubaccountData(client.userMap, accounts[0].id);
         } else {
           setHasDriftAccount(false);
@@ -82,7 +77,6 @@ export default function LookupWalletModal() {
     
     initLookupWallet();
     
-    // Clean up function
     return () => {
       setLookupSubaccounts([]);
       setLookupBalances({});
@@ -91,11 +85,9 @@ export default function LookupWalletModal() {
     };
   }, [lookupWalletAddress, isWalletLookupModalOpen]);
   
-  // Fetch data for a specific subaccount
   const fetchSubaccountData = async (userMap: UserMap, subaccountId: number) => {
     if (!userMap) return;
     
-    // Fetch balances
     try {
       const accountBalances = await getBalances(userMap, subaccountId);
       setLookupBalances(accountBalances);
@@ -103,7 +95,6 @@ export default function LookupWalletModal() {
       console.error('Error fetching balances:', error);
     }
     
-    // Fetch positions
     try {
       const perpPositions = await getPerpPositions(userMap, subaccountId);
       setLookupPositions(perpPositions);
@@ -111,7 +102,6 @@ export default function LookupWalletModal() {
       console.error('Error fetching positions:', error);
     }
     
-    // Fetch orders
     try {
       const openOrders = await getOpenOrders(userMap, subaccountId);
       setLookupOrders(openOrders);
@@ -125,7 +115,6 @@ export default function LookupWalletModal() {
     
     setSelectedSubaccountIndex(index);
     
-    // Re-initialize the client to get fresh data for the selected subaccount
     try {
       if (!lookupWalletAddress) return;
       setIsLoadingData(true);
@@ -148,11 +137,9 @@ export default function LookupWalletModal() {
   
   const handleCloseModal = () => {
     closeWalletLookupModal();
-    // Clear the lookup wallet address
     setLookupWalletAddress(null);
   };
   
-  // Render content based on loading and account state
   const renderContent = () => {
     if (loading) {
       return (
@@ -195,7 +182,6 @@ export default function LookupWalletModal() {
           </h3>
         </div>
         
-        {/* Subaccounts List */}
         <div className="mb-4">
           <h4 className="text-sm font-medium text-gray-400 mb-2">Subaccounts</h4>
           <div className="flex flex-wrap gap-2">
@@ -254,9 +240,8 @@ export default function LookupWalletModal() {
           </nav>
         </div>
         
-        {/* Tab Content */}
         <div className="mt-4">
-          {/* Balances Tab */}
+
           {activeTab === 'balances' && (
             <div className="space-y-4">
               {isLoadingData ? (
@@ -290,7 +275,6 @@ export default function LookupWalletModal() {
             </div>
           )}
           
-          {/* Positions Tab */}
           {activeTab === 'positions' && (
             <div className="space-y-4">
               {isLoadingData ? (
@@ -338,7 +322,6 @@ export default function LookupWalletModal() {
             </div>
           )}
           
-          {/* Orders Tab */}
           {activeTab === 'orders' && (
             <div className="space-y-4">
               {isLoadingData ? (

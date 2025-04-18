@@ -1,4 +1,3 @@
-// app/components/BalanceView.js
 'use client';
 
 import { formatLargeNumber } from '@/utils';
@@ -56,7 +55,6 @@ export default function BalanceView({ balances, loading }: { balances: any, load
                   <h3 className="font-medium">{balance.token}</h3>
                   <div className="text-sm text-gray-400">
                     Balance: {formatLargeNumber(balance.balance)}
-                    {/* Balance: {formatLargeNumber(balance.balance).toFixed(4)} */}
                   </div>
                 </div>
                 <div className="text-right">

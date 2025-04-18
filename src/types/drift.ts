@@ -1,17 +1,14 @@
 import { DriftClient, UserMap, PerpMarkets, BulkAccountLoader, TxParams, User, BN } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 
-// Main Drift client interfaces
 export interface DriftClientConfig {
   driftClient: DriftClient | null;
   userMap?: UserMap | null;
   user?: User | null;
   accountLoader: BulkAccountLoader | null;
   markets: typeof PerpMarkets | null;
-  //   userStatsAccount: string | null;
 }
 
-// Subaccount structures
 export interface Subaccount {
   id: number;
   name: string;
@@ -20,7 +17,6 @@ export interface Subaccount {
   delegate: string;
 }
 
-// Balance structures
 export interface TokenBalance {
   token: string;
   balance: string;
@@ -31,7 +27,6 @@ export interface SubaccountBalances {
   [token: string]: TokenBalance;
 }
 
-// Position structures
 export interface PerpPosition {
   marketIndex: string;
   baseAssetAmount: string;
@@ -43,7 +38,6 @@ export interface PerpPosition {
   direction: 'LONG' | 'SHORT';
 }
 
-// Order structures
 export interface OrderType {
   marketIndex: string;
   orderId: string;
@@ -56,7 +50,6 @@ export interface OrderType {
   timestamp: string;
 }
 
-// Modal states
 export interface ModalStates {
   isDepositModalOpen: boolean;
   isWithdrawModalOpen: boolean;
@@ -66,7 +59,6 @@ export interface ModalStates {
   isWalletLookupModalOpen: boolean;
 }
 
-// Order form states
 export interface OrderFormState {
   selectedMarket: string | null;
   orderType: 'MARKET' | 'LIMIT';
@@ -81,14 +73,12 @@ export interface OrderFormState {
   totalSize: string;
 }
 
-// Scaled order summary
 export interface ScaledOrderSummary {
   orderNum: number;
   price: string;
   size: string;
 }
 
-// Transaction response
 export interface TransactionResponse {
   txid: string;
   status: 'success' | 'error';
@@ -101,7 +91,6 @@ export interface DepositFundPayload {
   subaccountId: number,
   marketIndex: number,
   amount: BN,
-  // associatedTokenAccount: PublicKey,
   subAccountId?: number,
   reduceOnly?: boolean,
   txParams?: TxParams
@@ -113,7 +102,6 @@ export interface WithdrawFundPayload {
   subaccountId: number,
   marketIndex: number,
   amount: BN,
-  // associatedTokenAddress: PublicKey,
   subAccountId?: number,
   reduceOnly?: boolean,
   txParams?: TxParams,

@@ -1,10 +1,8 @@
-// app/components/ScaledOrdersForm.js
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheck, FiX, FiArrowUp, FiArrowDown } from 'react-icons/fi';
-import { placeMarketOrder } from '../utils/driftUtils';
 import useDriftStore from '../store/driftStore';
 import useSubaccountStore from '../store/subaccountStore';
 
@@ -32,7 +30,6 @@ export default function ScaledOrdersForm() {
   const [success, setSuccess] = useState('');
   const [orderSummary, setOrderSummary] = useState([]);
   
-  // Calculate order summary when parameters change
   useEffect(() => {
     if (
       priceRangeStart &&
@@ -109,22 +106,7 @@ export default function ScaledOrdersForm() {
       setIsSubmitting(true);
       setError('');
       setSuccess('');
-      
-      // const txSigs = await placeScaledOrders(
-      //   driftClient,
-      //   userMap,
-      //   subaccountId,
-      //   parseInt(marketIndex),
-      //   parseFloat(totalSize),
-      //   parseFloat(priceRangeStart),
-      //   parseFloat(priceRangeEnd),
-      //   scaledOrdersCount,
-      //   direction as 'LONG' | 'SHORT'
-      // );
-      
-      // setSuccess(`${txSigs.length} scaled orders placed successfully!`);
-      
-      // Reset form
+
       setTotalSize('');
       setPriceRangeStart('');
       setPriceRangeEnd('');
