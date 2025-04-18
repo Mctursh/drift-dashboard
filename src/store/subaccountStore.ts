@@ -47,7 +47,7 @@ const initialState: SubaccountState = {
   balances: {},
   positions: [],
   orders: [],
-  loading: false,
+  loading: true,
   balancesLoading: false,
   positionsLoading: false,
   ordersLoading: false,

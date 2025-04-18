@@ -23,9 +23,12 @@ import TakeProfitStopLossForm from './TakeProfitStopLossForm';
 import ScaledOrdersForm from './ScaledOrdersForm';
 import { FiActivity, FiDollarSign, FiGrid, FiLayers } from 'react-icons/fi';
 import LookupWalletModal from './modals/LookupWalletModal';
+import { useWallet } from '@hermis/solana-headless-react';
+import AppLoadingState from './ui/AppLoadingState';
 
 export default function Dashboard() {
-  const { connected, lookupWalletAddress } = useWalletStore();
+  const { connected } = useWallet()
+  const { lookupWalletAddress } = useWalletStore();
   const { isWalletLookupModalOpen, userMap, isDepositModalOpen, isWithdrawModalOpen, isPerpOrderModalOpen, isTpSlModalOpen, isScaledOrdersModalOpen } = useDriftStore();
   const { 
     subaccounts, 
@@ -43,9 +46,6 @@ export default function Dashboard() {
     setPositions,
     setOrders,
     setLoading,
-    setBalancesLoading,
-    setPositionsLoading,
-    setOrdersLoading,
   } = useSubaccountStore();
   
   const [activeTab, setActiveTab] = useState('balances');
@@ -93,40 +93,53 @@ export default function Dashboard() {
       
       const subaccountId = subaccount.id;
       
-      // Fetch balances
-      try {
-        setBalancesLoading(true);
-        const accountBalances = await getBalances(userMap, subaccountId);
-        setBalances(accountBalances);
-      } catch (error) {
-        console.error('Error fetching balances:', error);
-        setBalances({}); // Set empty on error
-      } finally {
-        setBalancesLoading(false);
-      }
+      // Set a single loading state for all data fetching
+      setLoading(true);
       
-      // Fetch positions
-      try {
-        setPositionsLoading(true);
-        const perpPositions = await getPerpPositions(userMap, subaccountId);
-        setPositions(perpPositions);
-      } catch (error) {
-        console.error('Error fetching positions:', error);
-        setPositions([]); // Set empty on error
-      } finally {
-        setPositionsLoading(false);
-      }
+      // Create fetch functions that handle their own errors
+      const fetchBalances = async () => {
+        try {
+          return await getBalances(userMap, subaccountId);
+        } catch (error) {
+          console.error('Error fetching balances:', error);
+          return {};
+        }
+      };
       
-      // Fetch orders
+      const fetchPositions = async () => {
+        try {
+          return await getPerpPositions(userMap, subaccountId);
+        } catch (error) {
+          console.error('Error fetching positions:', error);
+          return [];
+        }
+      };
+      
+      const fetchOrders = async () => {
+        try {
+          return await getOpenOrders(userMap, subaccountId);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+          return [];
+        }
+      };
+      
+      // Execute all fetch operations in parallel
       try {
-        setOrdersLoading(true);
-        const openOrders = await getOpenOrders(userMap, subaccountId);
-        setOrders(openOrders);
+        const [balancesData, positionsData, ordersData] = await Promise.all([
+          fetchBalances(),
+          fetchPositions(),
+          fetchOrders()
+        ]);
+        
+        // Update all state at once
+        setBalances(balancesData);
+        setPositions(positionsData);
+        setOrders(ordersData);
       } catch (error) {
-        console.error('Error fetching orders:', error);
-        setOrders([]); // Set empty on error
+        console.error('Error fetching subaccount data:', error);
       } finally {
-        setOrdersLoading(false);
+        setLoading(false);
       }
     };
     
@@ -138,15 +151,14 @@ export default function Dashboard() {
     setBalances, 
     setPositions, 
     setOrders,
-    setBalancesLoading,
-    setPositionsLoading,
-    setOrdersLoading,
+    setLoading
   ]);
   
   // Render dashboard when wallet is connected or a lookup address is provided
-  const shouldRenderDashboard = connected || lookupWalletAddress;
+  // const shouldRenderDashboard = connected
+  // lookupWalletAddress;
 
-  if (!shouldRenderDashboard) {
+  if (!connected) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -160,6 +172,10 @@ export default function Dashboard() {
         </div>
       </motion.div>
     );
+  }
+
+  if (connected && loading) {
+    return <AppLoadingState />
   }
 
   return (

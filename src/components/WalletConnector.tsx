@@ -40,10 +40,11 @@ const WalletConnection = () => {
   } = useWalletStore();
 
   const {
+    driftClient,
     setDriftClient,
     resetDriftState,
     setUserMap,
-    setMarkets
+    setMarkets,
   } = useDriftStore();
 
   const wallet = useAnchorWallet();
@@ -55,6 +56,34 @@ const WalletConnection = () => {
       initDriftClient();
     }
   }, [wallet]);
+
+
+  // If wallet exists but drift client doesn't, initialize client
+  useEffect(() => {
+    const initClient = async () => {
+      console.log('connected', connected);
+      console.log('wallet', wallet);
+      console.log('publicKey', publicKey);
+      console.log('driftClient', driftClient);
+      
+      if (wallet && connected && !driftClient) {
+        console.log('WalletConnector: Initializing Drift client');
+        try {
+          const client = await initializeDriftClient(connection, wallet);
+          console.log(client);
+          
+          setDriftClient(client.driftClient);
+          setUserMap(client.userMap || null);
+          setMarkets(client.markets || null);
+        } catch (error) {
+          console.error('Failed to initialize Drift client:', error);
+        }
+      }
+    };
+    
+    initClient();
+  }, [wallet, connected, driftClient, connection, setDriftClient, setUserMap, setMarkets]);
+
 
 
   const handleWalletSelect = async (walletName: WalletName) => {
@@ -74,8 +103,6 @@ const WalletConnection = () => {
       setPublicKey(selectedAdapterPublickey);
       setConnected(true);
     }
-
-
 
 
     let signatureBase64: string;
